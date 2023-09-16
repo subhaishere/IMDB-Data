@@ -1,97 +1,55 @@
-let API_KEY = "";
-let SEARCH_TERM = "";
+const form = document.getElementById("form");
+const container = document.getElementById("main");
+const loader = document.getElementById("loader");
 
-const searchButtonElement = document.getElementById("search");
-
-searchButtonElement.addEventListener("click", () => {
-  let apikeyValue = document.getElementById("api-key").value;
-  let searchValue = document.getElementById("search-box").value;
-  console.log(apikeyValue);
-  if (apikeyValue !== "") {
-    API_KEY = apikeyValue;
-  } else {
-    alert("Please enter valid API");
-  }
-  if (searchValue.length < 3) {
-    document.querySelector(".warning").innerHTML = "";
-    const warning = document.querySelector(".warning");
-    warning.innerText = "Search term should be at least of 3 characters";
-  } else {
-    SEARCH_TERM = searchValue;
-  }
-  if (apikeyValue !== "" && searchValue.length >= 3) {
-    fetchData();
-  }
+//Event for form
+form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const api = form["api"].value;
+    const movie = form["movie"].value;
+    form.reset();
+    movieList(api, movie);
 });
 
-async function fetchData() {
-  document.querySelector(".cards-container").innerHTML = "";
-  let number = 0;
-  const endPoint = `https://www.omdbapi.com/?s=${SEARCH_TERM}&apikey=${API_KEY}`;
-  document.querySelector(".cards-container").style.display = "none";
-  try {
-    document.querySelector(".spinner-container").style.display = "flex";
-    const response = await fetch(endPoint);
-    const result = await response.json();
+//Function to fetch API
+async function movieList(api, movie) {
+    container.innerHTML = "";
+    loader.classList.remove("hide");
+    const url = `https://www.omdbapi.com/?i=tt3896198&apikey=${api}&s=${movie}`;
     try {
-      console.log(result.Error);
-      if (result.Error === "Invalid API key!") {
-        const warningContainer = document.createElement("p");
-        warningContainer.className = "api-failed";
-        warningContainer.innerText =
-          "You have entered incorrect API \uD83D\uDE13";
-        document.querySelector(
-        ".cards-container"
-        ).style.display = "flex";
-        document.querySelector(".spinner-container").style.display = "none";
-        document.querySelector(".cards-container").appendChild(warningContainer);
-        console.log("executed!");
-        return;
-      }else if (result.Error === "Movie not found!") {
-        const warningContainer = document.createElement("p");
-        warningContainer.className = "api-failed";
-        warningContainer.innerText =
-          "Movie Not Found \uD83D\uDE13";
-        document.querySelector(".cards-container").style.display = "flex";
-        document.querySelector(".spinner-container").style.display = "none";
-        document
-          .querySelector(".cards-container")
-          .appendChild(warningContainer);
-        console.log("executed!");
-      }
-    } catch (error) {console.log(error)}
-    console.log(result);
-    console.log(result.Search);
-    result.Search.forEach((element) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      if (element.Poster === "N/A"){
-        card.innerHTML = `<img src="https://amir0707k.github.io/Accio_FE3_CE1/poster-holder.jpg" id="image-title" alt=""> 
-            <div class="details">
-                <p id="number">${(number = number + 1)}</p>
-                <p id="movie-name">
-                    ${element.Title}
-                </p>
-            </div>
-                `;
-      }else{
-                card.innerHTML = `<img src="${
-                  element.Poster
-                }" id="image-title" alt=""> 
-            <div class="details">
-                <p id="number">${(number = number + 1)}</p>
-                <p id="movie-name">
-                    ${element.Title}
-                </p>
-            </div>
-                `;
-      }
-
-      document.querySelector(".cards-container").appendChild(card);
-    });
-    document.querySelector(".spinner-container").style.display = "none";
-    document.querySelector(".cards-container").style.display = "flex";
-  } catch (error) {
-    console.log(error);
-  }
+        const response = await fetch(url);
+        const movieDetail = await response.json();
+        console.log(movieDetail);
+        if (movieDetail.Response === 'True') {
+            loader.classList.add("hide");
+            for (let i = 0; i < movieDetail.Search.length; i++) {
+                makeCard(movieDetail.Search[i], i);
+            }
+        } else {
+            alert(movieDetail.Error);
+            loader.classList.add("hide");
+            movieList('31f6d050', 'avengers');
+        };
+    } catch (error) {
+        console.log(error);
+        alert(error);
+        loader.classList.add("hide");
+    }
 }
+movieList('244f433d', 'avengers');
+
+// For Making Card
+function makeCard(movieDetail, index) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.addEventListener('click', function () {
+        location.href = `https://www.imdb.com/title/${movieDetail.imdbID}`;
+    });
+    card.innerHTML = `
+        <img src="${movieDetail.Poster}" alt="${movieDetail.Title}">
+        <h1>${movieDetail.Title},${movieDetail.Year}</h1>
+        <p>${index + 1}</p>
+    `;
+    container.append(card);
+}
+
